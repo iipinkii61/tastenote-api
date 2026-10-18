@@ -1,0 +1,51 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// One shared personal journal for the MVP. Add ownership when adding authentication.
+model Restaurant {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(150)
+  location  String   @default("") @db.VarChar(200)
+  entries   Entry[]
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([name, location])
+}
+
+model Category {
+  id        String  @id @db.VarChar(40)
+  name      String  @unique @db.VarChar(80)
+  emoji     String  @db.VarChar(16)
+  color     String  @db.VarChar(24)
+  sortOrder Int     @default(0)
+  entries   Entry[]
+}
+
+model Entry {
+  id           String     @id @default(uuid()) @db.Uuid
+  restaurantId String     @db.Uuid
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  categoryId   String     @db.VarChar(40)
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  menu         String     @db.VarChar(150)
+  date         DateTime   @db.Date
+  price        Decimal    @db.Decimal(10, 2)
+  rating       Int        @db.SmallInt
+  note         String     @default("") @db.VarChar(500)
+  favorite     Boolean    @default(false)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  @@index([date, id])
+  @@index([favorite, date])
+  @@index([categoryId, date])
+  @@index([restaurantId])
+}
